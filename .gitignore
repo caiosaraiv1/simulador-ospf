@@ -1,0 +1,22 @@
+# Pastas de Build e Dependências
+build/
+.conan2/
+
+# Arquivos temporários do CMake e Compiladores
+CMakeFiles/
+CMakeCache.txt
+CMakeUserPresets.json
+*.cmake
+*.a
+*.o
+*.so
+
+# Configurações de IDEs (VSCode, CLion, Neovim)
+.vscode/
+.idea/
+.clangd/
+compile_commands.json
+
+# Sistema Operacional
+.DS_Store
+thumbs.db
