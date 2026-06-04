@@ -6,7 +6,7 @@
 
 - [X] Criar as `structs` ou `classes` fundamentais de representação de rede (ex: `RouterID`, `Link`, `LSA`).
 
-- [ ] Implementar a função de inicialização que lê o JSON e instancia os objetos em memória (sem depender de `sscanf` ou parse manual).
+- [X] Implementar a função de inicialização que lê o JSON e instancia os objetos em memória (sem depender de `sscanf` ou parse manual).
 
 
 ### Fase 2: O Coração do Roteamento (Matemática e LSDB)

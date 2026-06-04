@@ -55,7 +55,7 @@ class Roteador
             */
             std::unordered_map<std::string, std::chrono::steady_clock::time_point> timers_vizinho;
 
-            FilaMensagens inbox;
+            std::shared_ptr<FilaMensagens> inbox;
             std::thread thread_trabalho;
             bool ativo;
 
@@ -70,8 +70,10 @@ class Roteador
             void enviar_hello(); // Faz o flood multicast para as portas conectadas
             void executar_dijkstra(); // Roda o SPF (Shortest Path First) atualizando as rotas
             void suicidio(); // Quebra o loop da thread graciosamente ao ler a Poison Pill
+            void adicionar_link(const Link& novo_link); // Insere um link mapeado na tabela de vizinhos (LSDB)
 
             // Getters seguros para leitura externa
             std::string get_router_id() const;
             bool is_ativo() const;
+            std::shared_ptr<FilaMensagens> get_inbox() const;
 };
