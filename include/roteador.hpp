@@ -57,6 +57,7 @@ class Roteador
 
             std::shared_ptr<FilaMensagens> inbox;
             std::thread thread_trabalho;
+
             bool ativo;
 
       public:

@@ -11,7 +11,7 @@
 
 ### Fase 2: O Coração do Roteamento (Matemática e LSDB)
 
-- [ ] Implementar a estrutura da LSDB usando `std::unordered_map<std::string, std::vector<Link>>`.
+- [X] Implementar a estrutura da LSDB usando `std::unordered_map<std::string, std::vector<Link>>`.
 
 - [ ] Implementar o algoritmo de Dijkstra (SPF) capaz de navegar por essa LSDB e calcular as rotas mais curtas.
 
