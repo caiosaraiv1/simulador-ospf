@@ -1,35 +1,39 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <thread>
-#include <mutex>
+#include "links.hpp"
+#include "mensagens.hpp"
+
+#include <chrono>
 #include <condition_variable>
 #include <deque>
-#include <chrono>
-#include "mensagens.hpp"
-#include "links.hpp"
+#include <mutex>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 /**
  * @brief Fila de mensagens thread-safe exclusiva de cada roteador.
- * Utiliza o modelo de produtores (vizinhos) e consumidor (a thread do roteador).
+ * Utiliza o modelo de produtores (vizinhos/simulador) e consumidor (a própria thread do roteador).
  */
-
 class FilaMensagens
 {
-      private:
-            std::deque<Mensagem> fila;
-            std::mutex mtx; // Tranca de memória para evitar Race Conditions
-            std::condition_variable cv; // Campainha para acordar a thread hibernando
+    private:
+	std::deque<Mensagem> fila;  // Buffer circular estável para manipulação FIFO nas duas pontas
+	std::mutex mtx;             // Mecanismo de exclusão mútua para evitar Race Conditions na fila
+	std::condition_variable cv; // Sinalizador reativo (campainha) para sincronização de threads
 
-      public:
-            FilaMensagens();
-            ~FilaMensagens();
+    public:
+	FilaMensagens() = default;
+	~FilaMensagens() = default;
+	FilaMensagens(const FilaMensagens &) = delete;
+	FilaMensagens &operator=(const FilaMensagens &) = delete;
+	FilaMensagens(FilaMensagens &&) = delete;
+	FilaMensagens &operator=(FilaMensagens &&) = delete;
 
-            void push_back(Mensagem msg);  // Tráfego padrão (HELLO, LSU)
-            void push_front(Mensagem msg); // Tráfego prioritário (POISON_PILL)
-            Mensagem pop(); // Retira a mensagem mais antiga (bloqueia se a fila estiver vazia)
+	void push_back(const Mensagem &msg);  // Tráfego regular assíncrono do protocolo OSPF
+	void push_front(const Mensagem &msg); // Tráfego emergencial prioritário out-of-band
+	Mensagem pop();                       // Método bloqueante de extração e tratamento de mensagens
 };
 
 /**
@@ -37,48 +41,49 @@ class FilaMensagens
  */
 class Roteador
 {
-      private:
-            std::string router_id;
+    private:
+	std::string router_id; // Identificador único do nó na rede física
 
-            // Link State Database: Mapeia o RouterID de qualquer roteador da rede para a lista de links dele
-            std::unordered_map<std::string, std::vector<Link>> lsdb;
+	// Link State Database: Tabela topológica global contendo o mapa de links de toda a rede
+	std::unordered_map<std::string, std::vector<Link>> lsdb;
 
-            /**
-             * @brief O que é o 'std::chrono::steady_clock::time_point'?
-             * * Pense nisso como uma "foto" tirada de um cronômetro de corrida perfeito:
-             * - chrono: É a biblioteca de tempo moderna e segura do C++.
-             * - steady_clock: É o cronômetro físico da CPU. Diferente do relógio do sistema
-             * (que pode ser adiantado/atrasado pelo usuário ou pela internet via NTP),
-             * esse cronômetro NUNCA volta no tempo e ignora fusos horários.
-             * - time_point: O instante matemático exato em que a "foto" foi tirada.
-             * * @var timers_vizinho
-             * Guarda o instante exato do último pacote HELLO recebido de cada vizinho.
-            */
-            std::unordered_map<std::string, std::chrono::steady_clock::time_point> timers_vizinho;
-            std::unordered_map<std::string, std::string> tabela_roteamento;
+	/**
+	 * @brief Map de Timers de Adjacência
+	 * Guarda o instante exato do relógio físico da CPU (steady_clock) do último HELLO de cada vizinho.
+	 */
+	std::unordered_map<std::string, std::chrono::steady_clock::time_point> timers_vizinho;
 
-            std::shared_ptr<FilaMensagens> inbox;
-            std::thread thread_trabalho;
+	// Tabela de Encaminhamento gerada pelo cálculo do algoritmo de caminhos mínimos
+	std::unordered_map<std::string, std::string> tabela_roteamento;
 
-            bool ativo;
+	std::shared_ptr<FilaMensagens> inbox; // Ponteiro compartilhado para a caixa de entrada
+	std::thread thread_trabalho;          // Handle da linha de execução independente no processador
 
-      public:
-            // Construtor: Inicializa a classe com o ID.
-            Roteador(std::string router_id);
-            ~Roteador();
+	bool ativo = false; // Flag de estado para controle lógico do laço concorrente
 
-            // Ações do Ciclo de Vida
-            void iniciar(); // Dispara a thread_trabalho e entra no loop infinito
-            void processar_mensagem(Mensagem msg); // Avalia o enum e direciona a lógica
-            void enviar_hello(); // Faz o flood multicast para as portas conectadas
-            void executar_dijkstra(); // Roda o SPF (Shortest Path First) atualizando as rotas
-            void suicidio(); // Quebra o loop da thread graciosamente ao ler a Poison Pill
-            void adicionar_link(const Link& novo_link); // Insere um link mapeado na tabela de vizinhos (LSDB)
-            void adicionar_link_na_lsdb(std::string id_origem, const Link& novo_link);
+    public:
+	// Construtor e Destrutor da Unidade Autônoma
+	Roteador(std::string router_id);
+	~Roteador() = default;
+	Roteador(const Roteador &) = delete;
+	Roteador &operator=(const Roteador &) = delete;
+	Roteador(Roteador &&) = delete;
+	Roteador &operator=(Roteador &&) = delete;
 
-            // Getters seguros para leitura externa
-            std::string get_router_id() const;
-            bool is_ativo() const;
-            std::shared_ptr<FilaMensagens> get_inbox() const;
-            void imprimir_tabela_roteamento() const;
+	// Ações de Infraestrutura, Concorrência e Ciclo de Vida
+	void ciclo_vida();                                                                // Rotina executada pela thread contendo o loop de eventos
+	void processar_mensagem(Mensagem msg);                                            // Despachante interno baseado no TipoMensagem
+	void enviar_hello();                                                              // Dispara anúncios HELLO locais para manter adjacências
+	void executar_dijkstra();                                                         // Processa a inteligência do protocolo (calcula rotas e Next-Hops)
+	void suicidio();                                                                  // Rotina de auto-encerramento disparada pelo recebimento da Poison Pill
+	void adicionar_link(const Link &novo_link);                                       // Configuração direta de interfaces locais
+	void adicionar_link_na_lsdb(const std::string &id_origem, const Link &novo_link); // Inserção genérica na LSDB
+	void ligar_roteador();                                                            // Instancia a thread e starta o ciclo concorrente
+	void desligar_roteador();                                                         // Sinaliza parada, injeta pílula e performa o join seguro
+
+	// Getters públicos e constantes com garantia thread-safe para monitoramento externo
+	std::string get_router_id() const;
+	bool is_ativo() const;
+	std::shared_ptr<FilaMensagens> get_inbox() const;
+	std::unordered_map<std::string, std::string> get_tabela_roteamento() const;
 };

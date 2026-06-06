@@ -1,0 +1,26 @@
+Language: Cpp
+Standard: c++20
+
+# Indentação
+IndentWidth: 6
+TabWidth: 6
+UseTab: ForIndentation
+ContinuationIndentWidth: 6
+
+# Chaves sempre em linha própria (Allman style)
+BreakBeforeBraces: Allman
+
+# Espaçamento
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInAngles: Never
+
+# Linha
+ColumnLimit: 0
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+# Includes
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup

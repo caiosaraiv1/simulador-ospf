@@ -1,6 +1,7 @@
 #pragma once
 
 #include "links.hpp"
+
 #include <string>
 #include <vector>
 
@@ -10,9 +11,11 @@
  * LSU: Link State Update. Carrega a topologia (payload) para inundar a rede.
  * POISON_PILL: Mensagem Out-of-Band para forçar a morte da thread.
  */
-enum class TipoMensagem
+enum class TipoMensagem : std::uint8_t
 {
-      HELLO, LSU, POISON_PILL
+	HELLO,
+	LSU,
+	POISON_PILL
 };
 
 /*
@@ -23,7 +26,7 @@ enum class TipoMensagem
  */
 struct Mensagem
 {
-      TipoMensagem tipo;
-      std::string remetente_id;
-      std::vector<Link> payload;
+	TipoMensagem tipo{};
+	std::string remetente_id;
+	std::vector<Link> payload;
 };

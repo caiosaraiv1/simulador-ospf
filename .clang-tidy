@@ -1,0 +1,25 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  bugprone-*,
+  performance-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -readability-magic-numbers,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-identifier-length,
+  -readability-braces-around-statements
+
+WarningsAsErrors: ""
+
+HeaderFilterRegex: "include/.*\\.hpp"
+
+CheckOptions:
+  - key: modernize-use-default-member-init.UseAssignment
+    value: "true"
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDefs
+    value: "true"
+  - key: bugprone-easily-swappable-parameters.MinimumLength
+    value: "3"

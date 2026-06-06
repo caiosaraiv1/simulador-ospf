@@ -1,113 +1,178 @@
 #include "roteador.hpp"
+
+#include <chrono>
 #include <iostream>
-#include <string>
 #include <limits>
 #include <set>
+#include <string>
+#include <thread>
 
+// Construtor: Aloca a infraestrutura básica e a caixa de entrada protegida
 Roteador::Roteador(std::string router_id)
+    : router_id(std::move(router_id)),
+      inbox(std::make_shared<FilaMensagens>())
 {
-      this->router_id = router_id;
-      this->ativo = true;
-      this->inbox = std::make_shared<FilaMensagens>();
 }
 
-void Roteador::adicionar_link(const Link& novo_link)
-{
-      this->adicionar_link_na_lsdb(this->router_id, novo_link);
-}
+// Interface local: Adiciona conexões físicas do próprio nó na LSDB
+void Roteador::adicionar_link(const Link &novo_link) { this->adicionar_link_na_lsdb(this->router_id, novo_link); }
 
-void Roteador::adicionar_link_na_lsdb(std::string id_origem, const Link& novo_link)
-{
-    this->lsdb[id_origem].push_back(novo_link);
-}
+// Interface global: Atualiza a LSDB com links recebidos de terceiros via LSU
+void Roteador::adicionar_link_na_lsdb(const std::string &id_origem, const Link &novo_link) { this->lsdb[id_origem].push_back(novo_link); }
 
+// Algoritmo Dijkstra (Shortest Path First) para cálculo de caminhos mínimos
 void Roteador::executar_dijkstra()
 {
-      std::unordered_map<std::string, int> distancias;
-      std::unordered_map<std::string, std::string> anteriores;
-      std::set<std::string> nao_visitados;
+	std::unordered_map<std::string, int> distancias;
+	std::unordered_map<std::string, std::string> anteriores;
+	std::set<std::string> nao_visitados;
 
-      for (auto& roteador : this->lsdb)
-      {
-            distancias[roteador.first] = std::numeric_limits<int>::max();
-            nao_visitados.insert(roteador.first);
-      }
-      distancias[this->router_id] = 0;
+	// Inicializa o grafo: define custos como infinito e popula o set de não visitados
+	for (const auto &roteador : this->lsdb)
+	{
+		distancias[roteador.first] = std::numeric_limits<int>::max();
+		nao_visitados.insert(roteador.first);
+	}
+	// O nó de origem tem custo zero para ele mesmo
+	distancias[this->router_id] = 0;
 
-      while(!nao_visitados.empty())
-      {
-            // Passo 1: Nó de Menor Custo
-            std::string no_atual = "";
-            int menor_distancia = std::numeric_limits<int>::max();
-            for (auto& roteador : nao_visitados)
-            {
-                  if (distancias[roteador] < menor_distancia)
-                  {
-                        menor_distancia = distancias[roteador];
-                        no_atual = roteador;
-                  }
-            }
-            // Se o nó mais próximo ainda está no infinito, a rede dividiu e o resto é inalcançável.
-            if (menor_distancia == std::numeric_limits<int>::max()) break; // Sai do while imediatamente e encerra o algoritmo
+	while (!nao_visitados.empty())
+	{
+		// Passo 1: Busca o nó não visitado com a menor distância acumulada
+		std::string no_atual;
+		int menor_distancia = std::numeric_limits<int>::max();
+		for (const auto &roteador : nao_visitados)
+		{
+			if (distancias[roteador] < menor_distancia)
+			{
+				menor_distancia = distancias[roteador];
+				no_atual = roteador;
+			}
+		}
 
-            // Se o no_atual não tiver nenhuma informação de links na nossa LSDB, pula ele
-            if (this->lsdb.count(no_atual) == 0)
-            {
-                  nao_visitados.erase(no_atual); // Tira ele dos não visitados para não travar o loop
-                  continue; // Vai para a próxima rodada do while
-            }
+		// Proteção: Se a menor distância for infinito, os nós restantes estão isolados
+		if (menor_distancia == std::numeric_limits<int>::max())
+			break;
 
-            std::vector<Link> links = this->lsdb[no_atual];
-            int custo_acumulado = 0;
-            for (auto& link : links)
-            {
-                  custo_acumulado = distancias[no_atual] + link.custo;
-                  if (custo_acumulado < distancias[link.destino_id])
-                  {
-                        distancias[link.destino_id] = custo_acumulado;
-                        anteriores[link.destino_id] = no_atual;
-                  }
-            }
-            nao_visitados.erase(no_atual);
-      }
+		// Proteção: Evita crash caso o nó seja destino conhecido mas não possua links de saída na LSDB
+		if (!this->lsdb.contains(no_atual))
+		{
+			nao_visitados.erase(no_atual);
+			continue;
+		}
 
-      this->tabela_roteamento.clear();
-      for (auto& par : anteriores)
-      {
-            std::string destino = par.first;
-            std::string atual = destino;
+		// Passo 2: Relaxamento de arestas para os vizinhos do nó atual
+		std::vector<Link> links = this->lsdb[no_atual];
+		int custo_acumulado = 0;
+		for (auto &link : links)
+		{
+			custo_acumulado = distancias[no_atual] + link.custo;
+			if (custo_acumulado < distancias[link.destino_id])
+			{
+				distancias[link.destino_id] = custo_acumulado;
+				anteriores[link.destino_id] = no_atual;
+			}
+		}
+		nao_visitados.erase(no_atual);
+	}
 
-             while (anteriores.count(atual) && anteriores[atual] != this->router_id)
-                  atual = anteriores[atual];
+	// Passo 3: Engenharia reversa no mapa de predecessores para extrair o Next-Hop
+	this->tabela_roteamento.clear();
+	for (auto &par : anteriores)
+	{
+		std::string destino = par.first;
+		std::string atual = destino;
 
-            this->tabela_roteamento[destino] = atual;
-      }
+		// Rastreia o caminho de volta até encontrar o vizinho direto conectado à origem
+		while (anteriores.contains(atual) && anteriores[atual] != this->router_id)
+			atual = anteriores[atual];
+
+		this->tabela_roteamento[destino] = atual;
+	}
 }
 
-void Roteador::imprimir_tabela_roteamento() const
+// Chave de Ignição: Ativa o sinalizador e dispara a execução paralela
+void Roteador::ligar_roteador()
 {
-      std::cout << "\n--- TABELA DE ROTEAMENTO DO ROTEADOR [" << this->router_id << "] ---" << std::endl;
-      std::cout << "Destino Final\t->\tNext Hop (Próximo Salto)" << std::endl;
-
-      if (this->tabela_roteamento.empty())
-      {
-            std::cout << "[AVISO] Tabela vazia. Rode o Dijkstra primeiro!" << std::endl;
-            return;
-      }
-
-      for (auto& par : this->tabela_roteamento)
-      {
-            std::cout << "    " << par.first << "\t\t->\t    " << par.second << std::endl;
-      }
-      std::cout << "---------------------------------------------------\n" << std::endl;
+	this->ativo = true;
+	std::cout << "Roteador [" << this->router_id << "] ligando..." << '\n';
+	// Instancia a thread apontando para a rotina de execução passando o ponteiro do objeto
+	this->thread_trabalho = std::thread(&Roteador::ciclo_vida, this);
 }
 
+// Graceful Shutdown: Encerra o loop concorrente de forma limpa e reativa
+void Roteador::desligar_roteador()
+{
+	this->ativo = false;
+
+	// Modela o padrão Out-of-Band (Poison Pill) para destravar o wait da fila
+	Mensagem pilula;
+	pilula.tipo = TipoMensagem::POISON_PILL;
+
+	// Injeta na frente da fila com prioridade máxima
+	this->inbox->push_front(pilula);
+
+	// Bloqueia a thread principal até que a linha de execução paralela finalize
+	if (thread_trabalho.joinable())
+		thread_trabalho.join();
+	std::cout << "Roteador [" << this->router_id << "] desligando..." << '\n';
+}
+
+// Loop de Ciclo de Vida: Executado de forma autônoma pela std::thread
+void Roteador::ciclo_vida()
+{
+	while (this->ativo)
+	{
+		std::cout << "Roteador [" << this->router_id << "] operando..." << '\n';
+
+		// Consumo bloqueante: Hiberna se a fila estiver vazia sem gastar ciclos de CPU
+		Mensagem msg = this->inbox->pop();
+
+		// Intercepta a Pílula de Veneno para quebrar o laço imediatamente
+		if (msg.tipo == TipoMensagem::POISON_PILL)
+			break;
+	}
+}
+
+// Getters thread-safe para leitura de estado externa
 std::string Roteador::get_router_id() const { return this->router_id; }
 
 bool Roteador::is_ativo() const { return this->ativo; }
 
 std::shared_ptr<FilaMensagens> Roteador::get_inbox() const { return this->inbox; }
 
-FilaMensagens::FilaMensagens() {}
-FilaMensagens::~FilaMensagens() {}
-Roteador::~Roteador() {}
+std::unordered_map<std::string, std::string> Roteador::get_tabela_roteamento() const { return this->tabela_roteamento; }
+
+// Produtor Padrão: Insere mensagens no fim da fila (HELLOs, LSUs)
+void FilaMensagens::push_back(const Mensagem &msg)
+{
+	// Garante exclusão mútua escopada desfazendo o lock no fim do método
+	std::scoped_lock lock(this->mtx);
+	this->fila.push_back(msg);
+	// Notifica e acorda a thread consumidora que estava em wait
+	this->cv.notify_one();
+}
+
+// Produtor Prioritário: Insere comandos de controle na frente do deque (Poison Pill)
+void FilaMensagens::push_front(const Mensagem &msg)
+{
+	std::scoped_lock lock(this->mtx);
+	this->fila.push_front(msg);
+	this->cv.notify_one();
+}
+
+// Consumidor Seguro: Lê e extrai dados da fila controlando a hibernação da thread
+Mensagem FilaMensagens::pop()
+{
+	// unique_lock: Obrigatório para uso com condition_variable devido à flexibilidade de trancar/destrancar
+	std::unique_lock<std::mutex> lock(this->mtx);
+
+	// Bloqueia a execução se o lambda retornar false. Libera o mutex atonicamente enquanto dorme
+	this->cv.wait(lock, [this]
+	              { return !this->fila.empty(); });
+
+	// Resgata o dado de forma segura antes de removê-lo da memória (pop_front em C++ é void)
+	Mensagem front = this->fila.front();
+	this->fila.pop_front();
+	return front;
+}
