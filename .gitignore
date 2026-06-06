@@ -20,3 +20,6 @@ compile_commands.json
 # Sistema Operacional
 .DS_Store
 thumbs.db
+
+# Binários soltos na raiz
+/teste_dijkstra

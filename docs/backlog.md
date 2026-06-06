@@ -13,9 +13,9 @@
 
 - [X] Implementar a estrutura da LSDB usando `std::unordered_map<std::string, std::vector<Link>>`.
 
-- [ ] Implementar o algoritmo de Dijkstra (SPF) capaz de navegar por essa LSDB e calcular as rotas mais curtas.
+- [X] Implementar o algoritmo de Dijkstra (SPF) capaz de navegar por essa LSDB e calcular as rotas mais curtas.
 
-- [ ] Criar um teste unitário simples: popular a LSDB manualmente e garantir que o Dijkstra retorna o caminho e o custo corretos.
+- [X] Criar um teste unitário simples: popular a LSDB manualmente e garantir que o Dijkstra retorna o caminho e o custo corretos.
 
 
 ### Fase 3: Concorrência e Modelo de Atores (O Motor Paralelo)

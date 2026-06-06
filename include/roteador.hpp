@@ -2,19 +2,20 @@
 
 #include <string>
 #include <vector>
-#include "links.hpp"
 #include <unordered_map>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <deque>
-#include "mensagens.hpp"
 #include <chrono>
+#include "mensagens.hpp"
+#include "links.hpp"
 
 /**
  * @brief Fila de mensagens thread-safe exclusiva de cada roteador.
  * Utiliza o modelo de produtores (vizinhos) e consumidor (a thread do roteador).
  */
+
 class FilaMensagens
 {
       private:
@@ -54,6 +55,7 @@ class Roteador
              * Guarda o instante exato do último pacote HELLO recebido de cada vizinho.
             */
             std::unordered_map<std::string, std::chrono::steady_clock::time_point> timers_vizinho;
+            std::unordered_map<std::string, std::string> tabela_roteamento;
 
             std::shared_ptr<FilaMensagens> inbox;
             std::thread thread_trabalho;
@@ -72,9 +74,11 @@ class Roteador
             void executar_dijkstra(); // Roda o SPF (Shortest Path First) atualizando as rotas
             void suicidio(); // Quebra o loop da thread graciosamente ao ler a Poison Pill
             void adicionar_link(const Link& novo_link); // Insere um link mapeado na tabela de vizinhos (LSDB)
+            void adicionar_link_na_lsdb(std::string id_origem, const Link& novo_link);
 
             // Getters seguros para leitura externa
             std::string get_router_id() const;
             bool is_ativo() const;
             std::shared_ptr<FilaMensagens> get_inbox() const;
+            void imprimir_tabela_roteamento() const;
 };
