@@ -20,13 +20,13 @@
 
 ### Fase 3: Concorrência e Modelo de Atores (O Motor Paralelo)
 
-- [ ] Criar a classe principal `Roteador` e fazer seu método de ciclo de vida rodar em uma `std::thread` independente.
+- [X] Criar a classe principal `Roteador` e fazer seu método de ciclo de vida rodar em uma `std::thread` independente.
 
-- [ ] Implementar a "Caixa de Entrada": um `std::deque` encapsulado com `std::mutex` (ou `std::unique_lock`) para ser 100% _thread-safe_.
+- [X] Implementar a "Caixa de Entrada": um `std::deque` encapsulado com `std::mutex` (ou `std::unique_lock`) para ser 100% _thread-safe_.
 
-- [ ] Definir o enumerador/struct das mensagens que transitarão nas filas (`HELLO`, `LSU_UPDATE`, `POISON_PILL`).
+- [X] Definir o enumerador/struct das mensagens que transitarão nas filas (`HELLO`, `LSU_UPDATE`, `POISON_PILL`).
 
-- [ ] Fazer as threads se enxergarem e conseguirem dar `push_back` na fila dos vizinhos conectados.
+- [X] Fazer as threads se enxergarem e conseguirem dar `push_back` na fila dos vizinhos conectados.
 
 
 ### Fase 4: Dinâmica OSPF e Máquina de Estados
