@@ -15,6 +15,7 @@ enum class TipoMensagem : std::uint8_t
 {
 	HELLO,
 	LSU,
+      TIMEOUT,
 	POISON_PILL
 };
 

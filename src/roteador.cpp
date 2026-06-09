@@ -8,9 +8,10 @@
 #include <thread>
 
 // Construtor: Aloca a infraestrutura básica e a caixa de entrada protegida
-Roteador::Roteador(std::string router_id)
+Roteador::Roteador(std::string router_id, Simulador* simulador)
     : router_id(std::move(router_id)),
-      inbox(std::make_shared<FilaMensagens>())
+      inbox(std::make_shared<FilaMensagens>()),
+      simulador(simulador)
 {
 }
 
@@ -121,17 +122,47 @@ void Roteador::desligar_roteador()
 // Loop de Ciclo de Vida: Executado de forma autônoma pela std::thread
 void Roteador::ciclo_vida()
 {
+      auto ultimo_hello = std::chrono::steady_clock::now();
 	while (this->ativo)
 	{
+            auto agora = std::chrono::steady_clock::now();
+
+            auto tempo_passado = agora - ultimo_hello;
+            auto timeout_dinamico = std::chrono::seconds(2) - tempo_passado;
+
+            if (timeout_dinamico < std::chrono::seconds(0)) timeout_dinamico = std::chrono::seconds(0);
+
 		std::cout << "Roteador [" << this->router_id << "] operando..." << '\n';
 
 		// Consumo bloqueante: Hiberna se a fila estiver vazia sem gastar ciclos de CPU
-		Mensagem msg = this->inbox->pop();
+            auto timeout_ms = std::chrono::duration_cast<std::chrono::milliseconds>(timeout_dinamico);
+		Mensagem msg = this->inbox->wait_pop(timeout_ms);
 
 		// Intercepta a Pílula de Veneno para quebrar o laço imediatamente
-		if (msg.tipo == TipoMensagem::POISON_PILL)
-			break;
+		if (msg.tipo == TipoMensagem::POISON_PILL) break;
+            if (msg.tipo != TipoMensagem::TIMEOUT) this->processar_mensagem(msg);
+
+            agora = std::chrono::steady_clock::now();
+            if (agora - ultimo_hello >= std::chrono::seconds(2))
+            {
+                  this->enviar_hello();
+                  ultimo_hello = agora;
+            }
 	}
+}
+
+void Roteador::enviar_hello()
+{
+      Mensagem msg;
+      msg.tipo = TipoMensagem::HELLO;
+      msg.remetente_id = this->router_id;
+
+      std::vector<Link> links = this->lsdb[this->router_id];
+      for (const auto& link : links)
+      {
+            std::string destino = link.destino_id;
+            this->simulador->enviar_mensagem_global(destino, msg);
+      }
 }
 
 // Getters thread-safe para leitura de estado externa
@@ -175,4 +206,21 @@ Mensagem FilaMensagens::pop()
 	Mensagem front = this->fila.front();
 	this->fila.pop_front();
 	return front;
+}
+
+Mensagem FilaMensagens::wait_pop(std::chrono::milliseconds timeout)
+{
+      std::unique_lock<std::mutex> lock(this->mtx);
+
+      if ( this->cv.wait_for(lock, timeout, [this] { return !this->fila.empty(); }) )
+      {
+            Mensagem front = this->fila.front();
+	      this->fila.pop_front();
+	      return front;
+      }
+
+      Mensagem msg;
+      msg.tipo = TipoMensagem::TIMEOUT;
+
+      return msg;
 }

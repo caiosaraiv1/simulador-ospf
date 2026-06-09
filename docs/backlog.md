@@ -31,7 +31,7 @@
 
 ### Fase 4: Dinâmica OSPF e Máquina de Estados
 
-- [ ] Implementar a lógica de tempo: disparo periódico de pacotes `HELLO` para os vizinhos mapeados.
+- [X] Implementar a lógica de tempo: disparo periódico de pacotes `HELLO` para os vizinhos mapeados.
 
 - [ ] Implementar o controle de estado da vizinhança (transição de _Down_ para _Init_ e para _Full_).
 

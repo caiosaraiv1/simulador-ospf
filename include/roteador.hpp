@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
+class Simulador;
+
 /**
  * @brief Fila de mensagens thread-safe exclusiva de cada roteador.
  * Utiliza o modelo de produtores (vizinhos/simulador) e consumidor (a própria thread do roteador).
@@ -34,6 +36,7 @@ class FilaMensagens
 	void push_back(const Mensagem &msg);  // Tráfego regular assíncrono do protocolo OSPF
 	void push_front(const Mensagem &msg); // Tráfego emergencial prioritário out-of-band
 	Mensagem pop();                       // Método bloqueante de extração e tratamento de mensagens
+      Mensagem wait_pop(std::chrono::milliseconds timeout);
 };
 
 /**
@@ -59,11 +62,12 @@ class Roteador
 	std::shared_ptr<FilaMensagens> inbox; // Ponteiro compartilhado para a caixa de entrada
 	std::thread thread_trabalho;          // Handle da linha de execução independente no processador
 
+      Simulador* simulador;
 	bool ativo = false; // Flag de estado para controle lógico do laço concorrente
 
     public:
 	// Construtor e Destrutor da Unidade Autônoma
-	Roteador(std::string router_id);
+	Roteador(std::string router_id, Simulador* simulador);
 	~Roteador() = default;
 	Roteador(const Roteador &) = delete;
 	Roteador &operator=(const Roteador &) = delete;

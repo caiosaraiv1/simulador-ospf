@@ -56,3 +56,9 @@ void Simulador::carregar_topologia(const std::string &caminho_json)
 		}
 	}
 }
+
+void Simulador::enviar_mensagem_global(std::string destino_id, Mensagem msg)
+{
+      if (this->rede[destino_id]->is_ativo() && this->rede.contains(destino_id))
+            this->rede[destino_id]->get_inbox()->push_back(msg);
+}

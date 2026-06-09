@@ -47,4 +47,6 @@ class Simulador
 	 * @param router_id O ID do roteador que será abatido.
 	 */
 	void injetar_caos(std::string router_id);
+
+      void enviar_mensagem_global(std::string destino_id, Mensagem msg);
 };
