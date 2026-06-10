@@ -33,9 +33,9 @@
 
 - [X] Implementar a lógica de tempo: disparo periódico de pacotes `HELLO` para os vizinhos mapeados.
 
-- [ ] Implementar o controle de estado da vizinhança (transição de _Down_ para _Init_ e para _Full_).
+- [X] Implementar o controle de estado da vizinhança (transição de _Down_ para _Init_ e para _Full_).
 
-- [ ] Fazer com que, ao atingir o estado _Full_, o roteador empacote seus links em um `LSU` e envie aos vizinhos (inundação/flood).
+- [X] Fazer com que, ao atingir o estado _Full_, o roteador empacote seus links em um `LSU` e envie aos vizinhos (inundação/flood).
 
 - [ ] Ligar a recepção de um `LSU` novo à atualização da LSDB e ao disparo automático do Dijkstra.
 

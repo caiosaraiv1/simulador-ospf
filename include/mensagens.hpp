@@ -19,6 +19,13 @@ enum class TipoMensagem : std::uint8_t
 	POISON_PILL
 };
 
+enum class EstadoVizinho : std::uint8_t
+{
+      DOWN,
+      INIT,
+      FULL
+};
+
 /*
  * @brief Representa a unidade fundamental de comunicação entre os roteadores.
  * * @param tipo O propósito do pacote (HELLO, LSU, etc).
@@ -30,4 +37,5 @@ struct Mensagem
 	TipoMensagem tipo{};
 	std::string remetente_id;
 	std::vector<Link> payload;
+      std::vector<std::string> vizinhos_conhecidos;
 };

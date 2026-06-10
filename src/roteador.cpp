@@ -1,4 +1,5 @@
 #include "roteador.hpp"
+#include "simulador.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -153,15 +154,52 @@ void Roteador::ciclo_vida()
 
 void Roteador::enviar_hello()
 {
+      std::vector<string> ids_vizinhos;
+      for (const auto& vizinho : this->tabela_estados)
+            if (vizinho.second == EstadoVizinho::INIT || vizinho.second == EstadoVizinho::FULL)
+                  ids_vizinhos.push_back(vizinho.first);
+
       Mensagem msg;
       msg.tipo = TipoMensagem::HELLO;
       msg.remetente_id = this->router_id;
+      msg.vizinhos_conhecidos = std::move(ids_vizinhos);
 
       std::vector<Link> links = this->lsdb[this->router_id];
       for (const auto& link : links)
+            this->simulador->enviar_mensagem_global(link.destino_id, msg);
+}
+
+void Roteador::processar_mensagem(Mensagem msg)
+{
+      if (msg.tipo == TipoMensagem::HELLO)
       {
-            std::string destino = link.destino_id;
-            this->simulador->enviar_mensagem_global(destino, msg);
+            EstadoVizinho estado_inicial = this->tabela_estados.contains(msg.remetente_id)
+                                          ? this->tabela_estados[msg.remetente_id]
+                                          : EstadoVizinho::DOWN;
+
+            if (!this->tabela_estados.contains(msg.remetente_id))
+                  this->tabela_estados[msg.remetente_id] = EstadoVizinho::INIT;
+
+            auto it = std::find(msg.vizinhos_conhecidos.begin(), msg.vizinhos_conhecidos.end(), this->router_id);
+            if (it != msg.vizinhos_conhecidos.end()) this->tabela_estados[msg.remetente_id] = EstadoVizinho::FULL;
+            else this->tabela_estados[msg.remetente_id] = EstadoVizinho::INIT;
+
+            if (estado_inicial == EstadoVizinho::INIT && this->tabela_estados[msg.remetente_id] == EstadoVizinho::FULL)
+                  inundar_lsu();
+      }
+}
+
+void Roteador::inundar_lsu()
+{
+      Mensagem msg;
+      msg.tipo = TipoMensagem::LSU;
+      msg.remetente_id = this->router_id;
+      msg.payload = this->lsdb[this->router_id];
+
+      for (const auto& vizinho : this->tabela_estados)
+      {
+            if (vizinho.second == EstadoVizinho::FULL)
+                  this->simulador->enviar_mensagem_global(vizinho.first, msg);
       }
 }
 

@@ -58,6 +58,7 @@ class Roteador
 
 	// Tabela de Encaminhamento gerada pelo cálculo do algoritmo de caminhos mínimos
 	std::unordered_map<std::string, std::string> tabela_roteamento;
+      std::unordered_map<std::string, EstadoVizinho> tabela_estados;
 
 	std::shared_ptr<FilaMensagens> inbox; // Ponteiro compartilhado para a caixa de entrada
 	std::thread thread_trabalho;          // Handle da linha de execução independente no processador
@@ -84,7 +85,8 @@ class Roteador
 	void adicionar_link_na_lsdb(const std::string &id_origem, const Link &novo_link); // Inserção genérica na LSDB
 	void ligar_roteador();                                                            // Instancia a thread e starta o ciclo concorrente
 	void desligar_roteador();                                                         // Sinaliza parada, injeta pílula e performa o join seguro
-
+      void inundar_lsu();
+      
 	// Getters públicos e constantes com garantia thread-safe para monitoramento externo
 	std::string get_router_id() const;
 	bool is_ativo() const;
