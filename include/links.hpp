@@ -28,3 +28,8 @@ struct Link
 	 */
 	std::shared_ptr<FilaMensagens> inbox_vizinho;
 };
+
+inline bool operator==(const Link& a, const Link& b)
+{
+      return a.destino_id == b.destino_id && a.custo == b.custo;
+}

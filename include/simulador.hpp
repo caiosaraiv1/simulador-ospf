@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <chrono>
 
 /**
  * @brief Classe Gerente responsável por orquestrar o ecossistema da rede.
@@ -19,6 +20,8 @@ class Simulador
 	 * Valor: Ponteiro para o objeto Roteador instanciado em memória.
 	 */
 	std::unordered_map<std::string, std::shared_ptr<Roteador>> rede;
+
+      std::chrono::steady_clock::time_point tempo_inicial;
 
     public:
 	Simulador() = default;
@@ -39,6 +42,7 @@ class Simulador
 	 * Dá o disparo inicial para que as threads comecem a rodar.
 	 */
 	void iniciar_simulacao();
+      void desligar_simulacao();
 
 	/**
 	 * @brief Ferramenta de Chaos Engineering.
@@ -49,4 +53,9 @@ class Simulador
 	void injetar_caos(std::string router_id);
 
       void enviar_mensagem_global(std::string destino_id, Mensagem msg);
+
+      int get_tempo_simulacao() const;
+
+      void registrar_roteador(const std::string& id, std::shared_ptr<Roteador> roteador);
+
 };

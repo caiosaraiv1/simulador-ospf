@@ -37,9 +37,9 @@
 
 - [X] Fazer com que, ao atingir o estado _Full_, o roteador empacote seus links em um `LSU` e envie aos vizinhos (inundação/flood).
 
-- [ ] Ligar a recepção de um `LSU` novo à atualização da LSDB e ao disparo automático do Dijkstra.
+- [X] Ligar a recepção de um `LSU` novo à atualização da LSDB e ao disparo automático do Dijkstra.
 
-- [ ] Formatar o log de saída padrão (terminal) para imprimir as transições e cálculos no estilo CLI de equipamentos de rede.
+- [X] Formatar o log de saída padrão (terminal) para imprimir as transições e cálculos no estilo CLI de equipamentos de rede.
 
 
 ### Fase 5: Chaos Engineering e Tolerância a Falhas

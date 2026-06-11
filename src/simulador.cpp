@@ -57,8 +57,39 @@ void Simulador::carregar_topologia(const std::string &caminho_json)
 	}
 }
 
+void Simulador::iniciar_simulacao()
+{
+      this->tempo_inicial = std::chrono::steady_clock::now();
+
+      for (const auto& rtr : this->rede)
+      {
+            rtr.second->ligar_roteador();
+      }
+}
+
+void Simulador::desligar_simulacao()
+{
+      for (const auto& rtr : this->rede)
+      {
+            if (rtr.second->is_ativo())
+                  rtr.second->desligar_roteador();
+      }
+}
+
+int Simulador::get_tempo_simulacao() const
+{
+      auto agora = std::chrono::steady_clock::now();
+      auto duracao = std::chrono::duration_cast<std::chrono::seconds>(agora - this->tempo_inicial);
+      return duracao.count();
+}
+
 void Simulador::enviar_mensagem_global(std::string destino_id, Mensagem msg)
 {
       if (this->rede.contains(destino_id) && this->rede[destino_id]->is_ativo())
             this->rede[destino_id]->get_inbox()->push_back(msg);
+}
+
+void Simulador::registrar_roteador(const std::string& id, std::shared_ptr<Roteador> roteador)
+{
+      this->rede[id] = roteador;
 }

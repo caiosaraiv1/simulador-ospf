@@ -6,7 +6,7 @@
 // Testa que o roteador inicia ativo e a thread sobe sem travar
 TEST(RoteadorThreadTest, LigarIniciaAtivo)
 {
-      Roteador r("1");
+      Roteador r("1", nullptr);
 
       r.ligar_roteador();
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -19,7 +19,7 @@ TEST(RoteadorThreadTest, LigarIniciaAtivo)
 // Testa que após desligar, is_ativo() retorna false
 TEST(RoteadorThreadTest, DesligarEncerraAtivo)
 {
-      Roteador r("1");
+      Roteador r("1", nullptr);
 
       r.ligar_roteador();
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -31,9 +31,9 @@ TEST(RoteadorThreadTest, DesligarEncerraAtivo)
 // Testa que múltiplos roteadores rodam em paralelo sem deadlock
 TEST(RoteadorThreadTest, MultiploRoteadoresParalelos)
 {
-      Roteador r1("1");
-      Roteador r2("2");
-      Roteador r3("3");
+      Roteador r1("1", nullptr);
+      Roteador r2("2", nullptr);
+      Roteador r3("3", nullptr);
 
       r1.ligar_roteador();
       r2.ligar_roteador();
@@ -57,7 +57,7 @@ TEST(RoteadorThreadTest, MultiploRoteadoresParalelos)
 // Testa que ligar -> desligar -> ligar funciona sem crash
 TEST(RoteadorThreadTest, ReligarRoteador)
 {
-      Roteador r("1");
+      Roteador r("1", nullptr);
 
       r.ligar_roteador();
       std::this_thread::sleep_for(std::chrono::milliseconds(100));

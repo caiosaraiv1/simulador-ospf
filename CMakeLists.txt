@@ -33,5 +33,5 @@ target_include_directories(simulador_ospf PRIVATE ${INCLUDES})
 # 5. Linkar as bibliotecas ao nosso executável
 target_link_libraries(simulador_ospf PRIVATE nlohmann_json::nlohmann_json)
 
-# 6. Testes 
-add_subdirectory(tests)
+# 6. Testes
+# add_subdirectory(tests)

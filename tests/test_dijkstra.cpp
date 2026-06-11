@@ -29,7 +29,7 @@ static Link make_link(const std::string& destino, int custo)
  */
 TEST(DijkstraTest, Diamante)
 {
-      Roteador r("1");
+      Roteador r("1", nullptr);
 
       r.adicionar_link_na_lsdb("1", make_link("2", 1));
       r.adicionar_link_na_lsdb("1", make_link("3", 1));
@@ -65,7 +65,7 @@ TEST(DijkstraTest, Diamante)
  */
 TEST(DijkstraTest, RedeParticionada)
 {
-      Roteador r("1");
+      Roteador r("1", nullptr);
 
       r.adicionar_link_na_lsdb("1", make_link("2", 10));
       r.adicionar_link_na_lsdb("2", make_link("1", 10));
@@ -90,7 +90,7 @@ TEST(DijkstraTest, RedeParticionada)
  */
 TEST(DijkstraTest, NoSemLinks)
 {
-      Roteador r("1");
+      Roteador r("1", nullptr);
 
       r.adicionar_link_na_lsdb("1", make_link("2", 5));
       r.adicionar_link_na_lsdb("2", make_link("1", 5));
@@ -119,7 +119,7 @@ TEST(DijkstraTest, NoSemLinks)
  */
 TEST(DijkstraTest, AtalhoVsRotaDiretaCara)
 {
-      Roteador r("1");
+      Roteador r("1", nullptr);
 
       r.adicionar_link_na_lsdb("1", make_link("2", 1));
       r.adicionar_link_na_lsdb("1", make_link("5", 20));

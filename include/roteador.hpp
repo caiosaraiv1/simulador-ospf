@@ -86,7 +86,9 @@ class Roteador
 	void ligar_roteador();                                                            // Instancia a thread e starta o ciclo concorrente
 	void desligar_roteador();                                                         // Sinaliza parada, injeta pílula e performa o join seguro
       void inundar_lsu();
-      
+      void inundar_lsu_msg(const Mensagem& msg);
+      void log_evento(int severidade, const std::string& tag, const std::string& mensagem) const;
+
 	// Getters públicos e constantes com garantia thread-safe para monitoramento externo
 	std::string get_router_id() const;
 	bool is_ativo() const;

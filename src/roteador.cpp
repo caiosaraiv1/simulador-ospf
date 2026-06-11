@@ -7,6 +7,9 @@
 #include <set>
 #include <string>
 #include <thread>
+#include <iomanip>
+
+static std::mutex mtx_log;
 
 // Construtor: Aloca a infraestrutura básica e a caixa de entrada protegida
 Roteador::Roteador(std::string router_id, Simulador* simulador)
@@ -97,7 +100,6 @@ void Roteador::executar_dijkstra()
 void Roteador::ligar_roteador()
 {
 	this->ativo = true;
-	std::cout << "Roteador [" << this->router_id << "] ligando..." << '\n';
 	// Instancia a thread apontando para a rotina de execução passando o ponteiro do objeto
 	this->thread_trabalho = std::thread(&Roteador::ciclo_vida, this);
 }
@@ -117,7 +119,7 @@ void Roteador::desligar_roteador()
 	// Bloqueia a thread principal até que a linha de execução paralela finalize
 	if (thread_trabalho.joinable())
 		thread_trabalho.join();
-	std::cout << "Roteador [" << this->router_id << "] desligando..." << '\n';
+      log_evento(2, "SHUTDOWN", "OSPF process terminating. Cleaning up neighbors and links.");
 }
 
 // Loop de Ciclo de Vida: Executado de forma autônoma pela std::thread
@@ -132,8 +134,6 @@ void Roteador::ciclo_vida()
             auto timeout_dinamico = std::chrono::seconds(2) - tempo_passado;
 
             if (timeout_dinamico < std::chrono::seconds(0)) timeout_dinamico = std::chrono::seconds(0);
-
-		std::cout << "Roteador [" << this->router_id << "] operando..." << '\n';
 
 		// Consumo bloqueante: Hiberna se a fila estiver vazia sem gastar ciclos de CPU
             auto timeout_ms = std::chrono::duration_cast<std::chrono::milliseconds>(timeout_dinamico);
@@ -154,7 +154,7 @@ void Roteador::ciclo_vida()
 
 void Roteador::enviar_hello()
 {
-      std::vector<string> ids_vizinhos;
+      std::vector<std::string> ids_vizinhos;
       for (const auto& vizinho : this->tabela_estados)
             if (vizinho.second == EstadoVizinho::INIT || vizinho.second == EstadoVizinho::FULL)
                   ids_vizinhos.push_back(vizinho.first);
@@ -178,19 +178,47 @@ void Roteador::processar_mensagem(Mensagem msg)
                                           : EstadoVizinho::DOWN;
 
             if (!this->tabela_estados.contains(msg.remetente_id))
+            {
                   this->tabela_estados[msg.remetente_id] = EstadoVizinho::INIT;
+                  log_evento(6, "NBR_CHG", "Neighbor " + msg.remetente_id + " state changed to INIT");
+            }
 
             auto it = std::find(msg.vizinhos_conhecidos.begin(), msg.vizinhos_conhecidos.end(), this->router_id);
             if (it != msg.vizinhos_conhecidos.end()) this->tabela_estados[msg.remetente_id] = EstadoVizinho::FULL;
             else this->tabela_estados[msg.remetente_id] = EstadoVizinho::INIT;
 
             if (estado_inicial == EstadoVizinho::INIT && this->tabela_estados[msg.remetente_id] == EstadoVizinho::FULL)
+            {
+                  log_evento(5, "NHB_CHG", "Neighbor " + msg.remetente_id + " state changed to FULL");
                   inundar_lsu();
+            }
+      }
+      else if (msg.tipo == TipoMensagem::LSU)
+      {
+            if (this->lsdb[msg.remetente_id] != msg.payload)
+            {
+                  log_evento(4, "LSDB_UPD", "Received newer LSDB update from " + msg.remetente_id + ". Updating local database.");
+                  this->lsdb[msg.remetente_id] = msg.payload;
+                  log_evento(6, "SPF_RUN", "LSDB changed. Triggering shortest path first (Dijkstra) calculation.");
+                  inundar_lsu_msg(msg);
+                  executar_dijkstra();
+            }
+      }
+}
+
+void Roteador::inundar_lsu_msg(const Mensagem& msg)
+{
+      log_evento(6, "LSU_TX", "Flooding local LSDB updates to adjacent neighbors");
+      for (const auto& vizinho : this->tabela_estados)
+      {
+            if (vizinho.second == EstadoVizinho::FULL && vizinho.first != msg.remetente_id)
+                  this->simulador->enviar_mensagem_global(vizinho.first, msg);
       }
 }
 
 void Roteador::inundar_lsu()
 {
+      log_evento(6, "LSU_TX", "Flooding local LSDB updates to adjacent neighbors");
       Mensagem msg;
       msg.tipo = TipoMensagem::LSU;
       msg.remetente_id = this->router_id;
@@ -201,6 +229,30 @@ void Roteador::inundar_lsu()
             if (vizinho.second == EstadoVizinho::FULL)
                   this->simulador->enviar_mensagem_global(vizinho.first, msg);
       }
+}
+
+void Roteador::log_evento(int severidade, const std::string& tag, const std::string& mensagem) const
+{
+      if (this->simulador == nullptr) return;
+
+      int tempo_segundos = this->simulador->get_tempo_simulacao();
+
+      int horas = tempo_segundos / 3600;
+      int minutos = (tempo_segundos % 3600) / 60;
+      int segundos = tempo_segundos % 60;
+
+      std::ostringstream oss;
+      oss << "["
+                << std::setw(2) << std::setfill('0') << horas << ":"
+                << std::setw(2) << std::setfill('0') << minutos << ":"
+                << std::setw(2) << std::setfill('0') << segundos
+                << "] "
+                << this->router_id << " %%01OSPF/"
+                << severidade << "/" << tag << ": "
+                << mensagem << "\n";
+
+      std::scoped_lock lock(mtx_log);
+      std::cout << oss.str();
 }
 
 // Getters thread-safe para leitura de estado externa
