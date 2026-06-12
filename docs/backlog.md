@@ -44,12 +44,12 @@
 
 ### Fase 5: Chaos Engineering e Tolerância a Falhas
 
-- [ ] Criar uma rotina geradora de caos (uma thread separada ou menu interativo) que escolhe um roteador aleatório para derrubar.
+- [X] Criar uma rotina geradora de caos (uma thread separada ou menu interativo) que escolhe um roteador aleatório para derrubar.
 
-- [ ] Implementar a injeção da `POISON_PILL` usando `push_front` na fila do roteador escolhido.
+- [X] Implementar a injeção da `POISON_PILL` usando `push_front` na fila do roteador escolhido.
 
-- [ ] Implementar o comportamento da _Poison Pill_: a thread do roteador deve limpar sua memória, dar _break_ no loop e morrer graciosamente.
+- [X] Implementar o comportamento da _Poison Pill_: a thread do roteador deve limpar sua memória, dar _break_ no loop e morrer graciosamente.
 
-- [ ] Adicionar o timer de _Dead Interval_ nos roteadores vivos: se ficarem X segundos sem receber _Hello_ de um vizinho, marcam o link como _Down_.
+- [X] Adicionar o timer de _Dead Interval_ nos roteadores vivos: se ficarem X segundos sem receber _Hello_ de um vizinho, marcam o link como _Down_.
 
-- [ ] Garantir que o link _Down_ gere um novo LSA e force a rede inteira a convergir e recalcular as rotas proativamente.
+- [X] Garantir que o link _Down_ gere um novo LSA e force a rede inteira a convergir e recalcular as rotas proativamente.

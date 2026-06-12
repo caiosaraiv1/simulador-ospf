@@ -1,5 +1,6 @@
 #include "roteador.hpp"
 #include "simulador.hpp"
+#include "logger.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -9,7 +10,6 @@
 #include <thread>
 #include <iomanip>
 
-static std::mutex mtx_log;
 
 // Construtor: Aloca a infraestrutura básica e a caixa de entrada protegida
 Roteador::Roteador(std::string router_id, Simulador* simulador)
@@ -143,6 +143,21 @@ void Roteador::ciclo_vida()
 		if (msg.tipo == TipoMensagem::POISON_PILL) break;
             if (msg.tipo != TipoMensagem::TIMEOUT) this->processar_mensagem(msg);
 
+            for (auto& estado : this->tabela_estados)
+            {
+                  if (estado.second == EstadoVizinho::INIT || estado.second == EstadoVizinho::FULL)
+                  {
+                        auto ultimo_hello = this->timers_vizinho[estado.first];
+                        auto delta_tempo = std::chrono::duration_cast<std::chrono::seconds> (agora - ultimo_hello);
+                        if (delta_tempo > this->dead_interval)
+                        {
+                              estado.second = EstadoVizinho::DOWN;
+                              this->log_evento(3, "NBR_DOWN", "Dead timer expired for neighbor " + estado.first + ". State changed to DOWN");
+                              inundar_lsu();
+                        }
+                  }
+            }
+
             agora = std::chrono::steady_clock::now();
             if (agora - ultimo_hello >= std::chrono::seconds(2))
             {
@@ -186,6 +201,9 @@ void Roteador::processar_mensagem(Mensagem msg)
             auto it = std::find(msg.vizinhos_conhecidos.begin(), msg.vizinhos_conhecidos.end(), this->router_id);
             if (it != msg.vizinhos_conhecidos.end()) this->tabela_estados[msg.remetente_id] = EstadoVizinho::FULL;
             else this->tabela_estados[msg.remetente_id] = EstadoVizinho::INIT;
+
+            auto agora = std::chrono::steady_clock::now();
+            this->timers_vizinho[msg.remetente_id] = agora;
 
             if (estado_inicial == EstadoVizinho::INIT && this->tabela_estados[msg.remetente_id] == EstadoVizinho::FULL)
             {
@@ -251,8 +269,7 @@ void Roteador::log_evento(int severidade, const std::string& tag, const std::str
                 << severidade << "/" << tag << ": "
                 << mensagem << "\n";
 
-      std::scoped_lock lock(mtx_log);
-      std::cout << oss.str();
+      Logger::imprimir(oss.str());
 }
 
 // Getters thread-safe para leitura de estado externa

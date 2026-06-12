@@ -1,8 +1,13 @@
 #include "simulador.hpp"
+#include "logger.hpp"
 
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <random>
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 using json = nlohmann::json;
 
@@ -65,6 +70,8 @@ void Simulador::iniciar_simulacao()
       {
             rtr.second->ligar_roteador();
       }
+
+      this->thread_caos = std::thread(&Simulador::rotina_caos, this);
 }
 
 void Simulador::desligar_simulacao()
@@ -73,6 +80,53 @@ void Simulador::desligar_simulacao()
       {
             if (rtr.second->is_ativo())
                   rtr.second->desligar_roteador();
+      }
+
+      this->caos_rodando = false;
+      if (this->thread_caos.joinable())
+            this->thread_caos.join();
+}
+
+void Simulador::rotina_caos()
+{
+      while (this->caos_rodando)
+      {
+            std::this_thread::sleep_for(std::chrono::seconds(8));
+
+            std::vector<std::string> roteadores_ativos;
+            for (const auto& rtr : this->rede)
+            {
+                  if (rtr.second->is_ativo())
+                        roteadores_ativos.push_back(rtr.first);
+            }
+
+            if (roteadores_ativos.size() == 0 || roteadores_ativos.size() == 1)
+                  continue;
+
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dist(0, roteadores_ativos.size() - 1);
+
+            int roteador_escolhido = dist(gen);
+            std::string id_roteador = roteadores_ativos[roteador_escolhido];
+            const auto& roteador = this->rede[id_roteador];
+
+            int tempo_segundos = this->get_tempo_simulacao();
+            int horas = tempo_segundos / 3600;
+            int minutos = (tempo_segundos % 3600) / 60;
+            int segundos = tempo_segundos % 60;
+
+            std::ostringstream oss;
+            oss << "["
+            << std::setw(2) << std::setfill('0') << horas << ":"
+            << std::setw(2) << std::setfill('0') << minutos << ":"
+            << std::setw(2) << std::setfill('0') << segundos
+            << "] SIMULATOR %%CHAOS/1/KILL: Injecting failure. Powering off router " << id_roteador << "\n";
+            Logger::imprimir(oss.str());
+
+            roteador->desligar_roteador();
+
+            if (!this->caos_rodando) break;
       }
 }
 

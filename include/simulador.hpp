@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <chrono>
+#include <atomic>
 
 /**
  * @brief Classe Gerente responsável por orquestrar o ecossistema da rede.
@@ -22,6 +23,10 @@ class Simulador
 	std::unordered_map<std::string, std::shared_ptr<Roteador>> rede;
 
       std::chrono::steady_clock::time_point tempo_inicial;
+
+      std::atomic<bool> caos_rodando{true};
+
+      std::thread thread_caos;
 
     public:
 	Simulador() = default;
@@ -42,15 +47,10 @@ class Simulador
 	 * Dá o disparo inicial para que as threads comecem a rodar.
 	 */
 	void iniciar_simulacao();
+
       void desligar_simulacao();
 
-	/**
-	 * @brief Ferramenta de Chaos Engineering.
-	 * Busca um roteador específico e injeta uma POISON_PILL direto na FilaMensagens dele,
-	 * forçando a queda do nó para testar a convergência do resto da rede.
-	 * @param router_id O ID do roteador que será abatido.
-	 */
-	void injetar_caos(std::string router_id);
+      void rotina_caos();
 
       void enviar_mensagem_global(std::string destino_id, Mensagem msg);
 

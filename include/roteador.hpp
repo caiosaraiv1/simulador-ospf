@@ -55,6 +55,7 @@ class Roteador
 	 * Guarda o instante exato do relógio físico da CPU (steady_clock) do último HELLO de cada vizinho.
 	 */
 	std::unordered_map<std::string, std::chrono::steady_clock::time_point> timers_vizinho;
+      std::chrono::seconds dead_interval{5};
 
 	// Tabela de Encaminhamento gerada pelo cálculo do algoritmo de caminhos mínimos
 	std::unordered_map<std::string, std::string> tabela_roteamento;

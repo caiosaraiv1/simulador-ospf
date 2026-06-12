@@ -24,6 +24,7 @@ set(SOURCES
     src/main.cpp
     src/roteador.cpp
     src/simulador.cpp
+    src/logger.cpp
 )
 
 # 4. Criar o Executável Principal
