@@ -249,6 +249,25 @@ void Roteador::inundar_lsu()
       }
 }
 
+void Roteador::ressucitar()
+{
+      if (this->thread_trabalho.joinable())
+            this->thread_trabalho.join();
+
+      this->tabela_estados.clear();
+      this->timers_vizinho.clear();
+
+      std::vector<Link> links = std::move(this->lsdb[this->router_id]);
+      this->lsdb.clear();
+      this->lsdb[this->router_id] = std::move(links);
+
+      while (!this->inbox->empty())
+            auto msg = this->inbox->pop();
+
+      this->ativo = true;
+      this->thread_trabalho = std::thread(&Roteador::ciclo_vida, this);
+}
+
 void Roteador::log_evento(int severidade, const std::string& tag, const std::string& mensagem) const
 {
       if (this->simulador == nullptr) return;

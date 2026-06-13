@@ -89,42 +89,94 @@ void Simulador::desligar_simulacao()
 
 void Simulador::rotina_caos()
 {
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_int_distribution<> roleta_porcentagem(1, 100);
+
       while (this->caos_rodando)
       {
-            std::this_thread::sleep_for(std::chrono::seconds(8));
+            this->vetor_ativos.clear();
+            std::this_thread::sleep_for(std::chrono::seconds(6));
 
-            std::vector<std::string> roteadores_ativos;
             for (const auto& rtr : this->rede)
             {
                   if (rtr.second->is_ativo())
-                        roteadores_ativos.push_back(rtr.first);
+                  this->vetor_ativos.push_back(rtr.first);
             }
 
-            if (roteadores_ativos.size() == 0 || roteadores_ativos.size() == 1)
-                  continue;
+            int dado_morte = roleta_porcentagem(gen);
+            if (dado_morte <= 40 && this->vetor_ativos.size() > 1)
+            {
+                  std::uniform_int_distribution<> dist_ativos(0, this->vetor_ativos.size() - 1);
 
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dist(0, roteadores_ativos.size() - 1);
+                  int roteador_escolhido = dist_ativos(gen);
+                  std::string id_roteador = this->vetor_ativos[roteador_escolhido];
+                  const auto& roteador = this->rede[id_roteador];
 
-            int roteador_escolhido = dist(gen);
-            std::string id_roteador = roteadores_ativos[roteador_escolhido];
-            const auto& roteador = this->rede[id_roteador];
+                  std::erase(this->vetor_ativos, id_roteador);
 
-            int tempo_segundos = this->get_tempo_simulacao();
-            int horas = tempo_segundos / 3600;
-            int minutos = (tempo_segundos % 3600) / 60;
-            int segundos = tempo_segundos % 60;
+                  RoteadorMorto roteador_morto;
+                  roteador_morto.id = id_roteador;
+                  roteador_morto.tempo_morte = std::chrono::steady_clock::now();
 
-            std::ostringstream oss;
-            oss << "["
-            << std::setw(2) << std::setfill('0') << horas << ":"
-            << std::setw(2) << std::setfill('0') << minutos << ":"
-            << std::setw(2) << std::setfill('0') << segundos
-            << "] SIMULATOR %%CHAOS/1/KILL: Injecting failure. Powering off router " << id_roteador << "\n";
-            Logger::imprimir(oss.str());
+                  this->vetor_mortos.push_back(roteador_morto);
 
-            roteador->desligar_roteador();
+                  int tempo_segundos = this->get_tempo_simulacao();
+                  int horas = tempo_segundos / 3600;
+                  int minutos = (tempo_segundos % 3600) / 60;
+                  int segundos = tempo_segundos % 60;
+
+                  std::ostringstream oss;
+                  oss << "["
+                  << std::setw(2) << std::setfill('0') << horas << ":"
+                  << std::setw(2) << std::setfill('0') << minutos << ":"
+                  << std::setw(2) << std::setfill('0') << segundos
+                  << "] SIMULATOR %%CHAOS/1/KILL: Injecting failure. Powering off router " << id_roteador << "\n";
+                  Logger::imprimir(oss.str());
+
+                  roteador->desligar_roteador();
+            }
+
+            int dado_vida = roleta_porcentagem(gen);
+            if (dado_vida <= 30 && !this->vetor_mortos.empty())
+            {
+                  std::vector<RoteadorMorto> elegiveis;
+                  auto agora = std::chrono::steady_clock::now(); // como o for vai rodar rapidamente, nao faz sentido ficar calulando isso N vezes
+                  for (const auto& rtr_morto : this->vetor_mortos)
+                  {
+                        auto delta_tempo = std::chrono::duration_cast<std::chrono::seconds> (agora - rtr_morto.tempo_morte);
+                        if (delta_tempo >= std::chrono::seconds(30))
+                              elegiveis.push_back(rtr_morto);
+                  }
+
+                  if (!elegiveis.empty())
+                  {
+                        std::uniform_int_distribution<> dist_elegiveis(0, elegiveis.size() - 1);
+
+                        int roteador_escolhido = dist_elegiveis(gen);
+                        RoteadorMorto roteador_ressucitado = elegiveis[roteador_escolhido];
+                        std::string id_roteador = roteador_ressucitado.id;
+
+                        std::erase_if(this->vetor_mortos, [&](const RoteadorMorto&rm) {
+                              return rm.id == id_roteador;
+                        });
+
+                        int tempo_segundos = this->get_tempo_simulacao();
+                        int horas = tempo_segundos / 3600;
+                        int minutos = (tempo_segundos % 3600) / 60;
+                        int segundos = tempo_segundos % 60;
+
+                        std::ostringstream oss;
+                        oss << "["
+                        << std::setw(2) << std::setfill('0') << horas << ":"
+                        << std::setw(2) << std::setfill('0') << minutos << ":"
+                        << std::setw(2) << std::setfill('0') << segundos
+                        << "] SIMULATOR %%CHAOS/5/RECOVERY: Maintenance finished. Powering ON router " << id_roteador << "\n";
+                        Logger::imprimir(oss.str());
+
+                        this->rede[id_roteador]->ressucitar();
+                  }
+            }
 
             if (!this->caos_rodando) break;
       }

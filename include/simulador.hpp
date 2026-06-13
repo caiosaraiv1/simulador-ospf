@@ -8,6 +8,12 @@
 #include <chrono>
 #include <atomic>
 
+struct RoteadorMorto
+{
+      std::string id;
+      std::chrono::steady_clock::time_point tempo_morte;
+};
+
 /**
  * @brief Classe Gerente responsável por orquestrar o ecossistema da rede.
  * Não possui threads próprias; seu papel é instanciar os roteadores,
@@ -21,12 +27,11 @@ class Simulador
 	 * Valor: Ponteiro para o objeto Roteador instanciado em memória.
 	 */
 	std::unordered_map<std::string, std::shared_ptr<Roteador>> rede;
-
       std::chrono::steady_clock::time_point tempo_inicial;
-
       std::atomic<bool> caos_rodando{true};
-
       std::thread thread_caos;
+      std::vector<std::string> vetor_ativos;
+      std::vector<RoteadorMorto> vetor_mortos;
 
     public:
 	Simulador() = default;

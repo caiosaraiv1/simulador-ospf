@@ -37,6 +37,7 @@ class FilaMensagens
 	void push_front(const Mensagem &msg); // Tráfego emergencial prioritário out-of-band
 	Mensagem pop();                       // Método bloqueante de extração e tratamento de mensagens
       Mensagem wait_pop(std::chrono::milliseconds timeout);
+      bool empty() const { return fila.empty(); }
 };
 
 /**
@@ -89,6 +90,7 @@ class Roteador
       void inundar_lsu();
       void inundar_lsu_msg(const Mensagem& msg);
       void log_evento(int severidade, const std::string& tag, const std::string& mensagem) const;
+      void ressucitar();
 
 	// Getters públicos e constantes com garantia thread-safe para monitoramento externo
 	std::string get_router_id() const;
