@@ -7,10 +7,10 @@
 class Logger
 {
     private:
-      // A única fechadura do terminal inteiro
-      static std::mutex mtx_terminal;
+	// A única fechadura do terminal inteiro
+	static std::mutex mtx_terminal;
 
     public:
-      // Método universal que qualquer um pode chamar
-      static void imprimir(const std::string& mensagem_formatada);
+	// Método universal que qualquer um pode chamar
+	static void imprimir(const std::string &mensagem_formatada);
 };

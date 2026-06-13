@@ -2,65 +2,53 @@
 
 #include "roteador.hpp"
 
+#include <atomic>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <chrono>
-#include <atomic>
 
+// Roteador derrubado pela rotina de caos; elegível para ressureição após 30s
 struct RoteadorMorto
 {
       std::string id;
       std::chrono::steady_clock::time_point tempo_morte;
 };
 
-/**
- * @brief Classe Gerente responsável por orquestrar o ecossistema da rede.
- * Não possui threads próprias; seu papel é instanciar os roteadores,
- * montar a topologia física (os cabos) e monitorar eventos globais.
- */
+// Orquestra o ecossistema da rede: carrega a topologia, liga os roteadores e injeta falhas
 class Simulador
 {
     private:
-	/** * @brief O mapa global da rede.
-	 * Chave: Router ID (ex: "1.1.1.1").
-	 * Valor: Ponteiro para o objeto Roteador instanciado em memória.
-	 */
-	std::unordered_map<std::string, std::shared_ptr<Roteador>> rede;
+      // Chave: Router ID — Valor: ponteiro para o objeto Roteador em memória
+      std::unordered_map<std::string, std::shared_ptr<Roteador>> rede;
+
       std::chrono::steady_clock::time_point tempo_inicial;
+
       std::atomic<bool> caos_rodando{true};
       std::thread thread_caos;
       std::vector<std::string> vetor_ativos;
       std::vector<RoteadorMorto> vetor_mortos;
 
     public:
-	Simulador() = default;
-	~Simulador() = default;
-	Simulador(const Simulador &) = delete;
-	Simulador &operator=(const Simulador &) = delete;
-	Simulador(Simulador &&) = delete;
-	Simulador &operator=(Simulador &&) = delete;
+      Simulador() = default;
+      ~Simulador() = default;
+      Simulador(const Simulador &) = delete;
+      Simulador &operator=(const Simulador &) = delete;
+      Simulador(Simulador &&) = delete;
+      Simulador &operator=(Simulador &&) = delete;
 
-	/**
-	 * @brief Lê o arquivo topologia.json e constrói os Roteadores e Links.
-	 * @param caminho_json Caminho relativo para o arquivo de dados.
-	 */
-	void carregar_topologia(const std::string &caminho_json);
+      // Configuração
+      void carregar_topologia(const std::string &caminho_json);
+      void registrar_roteador(const std::string &id, const std::shared_ptr<Roteador> &roteador);
 
-	/**
-	 * @brief Percorre o mapa da rede chamando o iniciar() de cada Roteador.
-	 * Dá o disparo inicial para que as threads comecem a rodar.
-	 */
-	void iniciar_simulacao();
-
+      // Controle da simulação
+      void iniciar_simulacao();
       void desligar_simulacao();
 
+      // Injeção de caos
       void rotina_caos();
 
-      void enviar_mensagem_global(std::string destino_id, Mensagem msg);
-
+      // Utilitários
       int get_tempo_simulacao() const;
-
-      void registrar_roteador(const std::string& id, std::shared_ptr<Roteador> roteador);
-
+      void enviar_mensagem_global(const std::string &destino_id, const Mensagem &msg);
 };

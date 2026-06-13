@@ -14,16 +14,15 @@
 
 class Simulador;
 
-/**
- * @brief Fila de mensagens thread-safe exclusiva de cada roteador.
- * Utiliza o modelo de produtores (vizinhos/simulador) e consumidor (a própria thread do roteador).
- */
+// ─── FilaMensagens ────────────────────────────────────────────────────────────
+
+// Fila thread-safe com modelo produtor/consumidor exclusiva de cada roteador
 class FilaMensagens
 {
     private:
-	std::deque<Mensagem> fila;  // Buffer circular estável para manipulação FIFO nas duas pontas
-	std::mutex mtx;             // Mecanismo de exclusão mútua para evitar Race Conditions na fila
-	std::condition_variable cv; // Sinalizador reativo (campainha) para sincronização de threads
+	std::deque<Mensagem> fila;
+	std::mutex mtx;
+	std::condition_variable cv;
 
     public:
 	FilaMensagens() = default;
@@ -33,66 +32,69 @@ class FilaMensagens
 	FilaMensagens(FilaMensagens &&) = delete;
 	FilaMensagens &operator=(FilaMensagens &&) = delete;
 
-	void push_back(const Mensagem &msg);  // Tráfego regular assíncrono do protocolo OSPF
-	void push_front(const Mensagem &msg); // Tráfego emergencial prioritário out-of-band
-	Mensagem pop();                       // Método bloqueante de extração e tratamento de mensagens
-      Mensagem wait_pop(std::chrono::milliseconds timeout);
-      bool empty() const { return fila.empty(); }
+	void push_back(const Mensagem &msg);                      // Tráfego regular do protocolo OSPF
+	void push_front(const Mensagem &msg);                     // Tráfego prioritário out-of-band (Poison Pill)
+	Mensagem pop();                                           // Bloqueante sem timeout
+	Mensagem wait_pop(std::chrono::milliseconds timeout);     // Bloqueante com timeout; retorna TIMEOUT se expirar
+
+	[[nodiscard]]
+	bool empty() const { return fila.empty(); }
 };
 
-/**
- * @brief Representa um Roteador OSPF autônomo rodando em sua própria thread.
- */
+// ─── Roteador ─────────────────────────────────────────────────────────────────
+
+// Roteador OSPF autônomo; cada instância roda em sua própria thread
 class Roteador
 {
     private:
-	std::string router_id; // Identificador único do nó na rede física
+	std::string router_id;
 
-	// Link State Database: Tabela topológica global contendo o mapa de links de toda a rede
 	std::unordered_map<std::string, std::vector<Link>> lsdb;
-
-	/**
-	 * @brief Map de Timers de Adjacência
-	 * Guarda o instante exato do relógio físico da CPU (steady_clock) do último HELLO de cada vizinho.
-	 */
-	std::unordered_map<std::string, std::chrono::steady_clock::time_point> timers_vizinho;
-      std::chrono::seconds dead_interval{5};
-
-	// Tabela de Encaminhamento gerada pelo cálculo do algoritmo de caminhos mínimos
 	std::unordered_map<std::string, std::string> tabela_roteamento;
-      std::unordered_map<std::string, EstadoVizinho> tabela_estados;
+	std::unordered_map<std::string, EstadoVizinho> tabela_estados;
 
-	std::shared_ptr<FilaMensagens> inbox; // Ponteiro compartilhado para a caixa de entrada
-	std::thread thread_trabalho;          // Handle da linha de execução independente no processador
+	// Instante do último HELLO recebido de cada vizinho; base do cálculo do dead timer
+	std::unordered_map<std::string, std::chrono::steady_clock::time_point> timers_vizinho;
+	std::chrono::seconds dead_interval{5};
 
-      Simulador* simulador;
-	bool ativo = false; // Flag de estado para controle lógico do laço concorrente
+	std::shared_ptr<FilaMensagens> inbox;
+	std::thread thread_trabalho;
+	Simulador *simulador;
+	bool ativo = false;
 
     public:
-	// Construtor e Destrutor da Unidade Autônoma
-	Roteador(std::string router_id, Simulador* simulador);
+	Roteador(std::string router_id, Simulador *simulador);
 	~Roteador() = default;
 	Roteador(const Roteador &) = delete;
 	Roteador &operator=(const Roteador &) = delete;
 	Roteador(Roteador &&) = delete;
 	Roteador &operator=(Roteador &&) = delete;
 
-	// Ações de Infraestrutura, Concorrência e Ciclo de Vida
-	void ciclo_vida();                                                                // Rotina executada pela thread contendo o loop de eventos
-	void processar_mensagem(Mensagem msg);                                            // Despachante interno baseado no TipoMensagem
-	void enviar_hello();                                                              // Dispara anúncios HELLO locais para manter adjacências
-	void executar_dijkstra();                                                         // Processa a inteligência do protocolo (calcula rotas e Next-Hops)
-	void suicidio();                                                                  // Rotina de auto-encerramento disparada pelo recebimento da Poison Pill
-	void adicionar_link(const Link &novo_link);                                       // Configuração direta de interfaces locais
-	void adicionar_link_na_lsdb(const std::string &id_origem, const Link &novo_link); // Inserção genérica na LSDB
-	void ligar_roteador();                                                            // Instancia a thread e starta o ciclo concorrente
-	void desligar_roteador();                                                         // Sinaliza parada, injeta pílula e performa o join seguro
-      void inundar_lsu();
-      void inundar_lsu_msg(const Mensagem& msg);
-      void log_evento(int severidade, const std::string& tag, const std::string& mensagem) const;
-      void ressucitar();
+	// Configuração
+	void adicionar_link(const Link &novo_link);
+	void adicionar_link_na_lsdb(const std::string &id_origem, const Link &novo_link);
 
-	// Getters públicos e constantes com garantia thread-safe para monitoramento externo
+	// Ciclo de vida
+	void ligar_roteador();
+	void desligar_roteador();
+	void ressucitar();
+
+	// Loop principal
+	void ciclo_vida();
+
+	// Protocolo OSPF
+	void enviar_hello();
+	void processar_mensagem(Mensagem msg);
+	void inundar_lsu_msg(const Mensagem &msg);
+	void inundar_lsu();
+
+	// Dijkstra
+	void executar_dijkstra();
+
+	// Utilitários
+	void log_evento(int severidade, const std::string &tag, const std::string &mensagem) const;
+
+	// Getters
 	std::string get_router_id() const;
 	bool is_ativo() const;
 	std::shared_ptr<FilaMensagens> get_inbox() const;

@@ -16,6 +16,7 @@ CMakeUserPresets.json
 .idea/
 .clangd/
 compile_commands.json
+.clang-format
 
 # Sistema Operacional
 .DS_Store
