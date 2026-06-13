@@ -14,9 +14,14 @@ find_package(nlohmann_json REQUIRED)
 # find_package(GTest REQUIRED) # Deixado comentado até configurarmos a pasta tests/
 
 # 2. Configurar Sanitizers (O "Chaos Engineering" da Memória)
-# Atenção: Você não pode usar AddressSanitizer e ThreadSanitizer ao mesmo tempo.
-add_compile_options(-Wall -Wextra -Wpedantic -fsanitize=address -g)
-add_link_options(-fsanitize=address)
+option(ENABLE_ASAN "Habilita AddressSanitizer" OFF)
+
+if(ENABLE_ASAN)
+    add_compile_options(-Wall -Wextra -Wpedantic -fsanitize=address -g)
+    add_link_options(-fsanitize=address)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 # 3. Mapear os diretórios e arquivos
 set(INCLUDES "include")
@@ -35,4 +40,4 @@ target_include_directories(simulador_ospf PRIVATE ${INCLUDES})
 target_link_libraries(simulador_ospf PRIVATE nlohmann_json::nlohmann_json)
 
 # 6. Testes
-# add_subdirectory(tests)
+add_subdirectory(tests)

@@ -1,0 +1,45 @@
+{
+  "routers": [
+    {
+      "id": "1.1.1.1",
+      "links": [
+        { "destino_id": "2.2.2.2", "custo": 5 },
+        { "destino_id": "3.3.3.3", "custo": 10 },
+        { "destino_id": "4.4.4.4", "custo": 2 }
+      ]
+    },
+    {
+      "id": "2.2.2.2",
+      "links": [
+        { "destino_id": "1.1.1.1", "custo": 5 },
+        { "destino_id": "3.3.3.3", "custo": 3 },
+        { "destino_id": "5.5.5.5", "custo": 8 }
+      ]
+    },
+    {
+      "id": "3.3.3.3",
+      "links": [
+        { "destino_id": "1.1.1.1", "custo": 10 },
+        { "destino_id": "2.2.2.2", "custo": 3 },
+        { "destino_id": "4.4.4.4", "custo": 7 },
+        { "destino_id": "5.5.5.5", "custo": 1 }
+      ]
+    },
+    {
+      "id": "4.4.4.4",
+      "links": [
+        { "destino_id": "1.1.1.1", "custo": 2 },
+        { "destino_id": "3.3.3.3", "custo": 7 },
+        { "destino_id": "5.5.5.5", "custo": 4 }
+      ]
+    },
+    {
+      "id": "5.5.5.5",
+      "links": [
+        { "destino_id": "2.2.2.2", "custo": 8 },
+        { "destino_id": "3.3.3.3", "custo": 1 },
+        { "destino_id": "4.4.4.4", "custo": 4 }
+      ]
+    }
+  ]
+}

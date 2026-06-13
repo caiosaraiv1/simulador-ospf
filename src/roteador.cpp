@@ -58,6 +58,7 @@ void Roteador::ressucitar()
 
 	this->tabela_estados.clear();
 	this->timers_vizinho.clear();
+      this->tabela_roteamento.clear();
 
 	// Preserva os links locais e descarta o estado de roteamento aprendido
 	std::vector<Link> links = std::move(this->lsdb[this->router_id]);

@@ -12,8 +12,14 @@ void handler_sinal(int sinal)
 	rodando = false;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+      if (argc < 2)
+      {
+            std::cerr << "Uso: " << argv[0] << " <caminho_topologia.json>\n";
+            return 1;
+      }
+
 	std::signal(SIGINT, handler_sinal);
 
 	std::cout << "========================================\n";
@@ -21,7 +27,7 @@ int main()
 	std::cout << "========================================\n";
 
 	Simulador sim;
-	sim.carregar_topologia("data/topologia.json");
+	sim.carregar_topologia(argv[1]);
 
 	std::cout << "[MAIN] Topologia carregada. Ligando roteadores...\n\n";
 

@@ -1,0 +1,255 @@
+{
+  "routers": [
+    {
+      "id": "1.1.1.1",
+      "links": [
+        {
+          "destino_id": "2.2.2.2",
+          "custo": 13
+        },
+        {
+          "destino_id": "5.5.5.5",
+          "custo": 7
+        }
+      ]
+    },
+    {
+      "id": "2.2.2.2",
+      "links": [
+        {
+          "destino_id": "1.1.1.1",
+          "custo": 11
+        },
+        {
+          "destino_id": "3.3.3.3",
+          "custo": 6
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 1
+        }
+      ]
+    },
+    {
+      "id": "3.3.3.3",
+      "links": [
+        {
+          "destino_id": "2.2.2.2",
+          "custo": 17
+        },
+        {
+          "destino_id": "4.4.4.4",
+          "custo": 1
+        },
+        {
+          "destino_id": "7.7.7.7",
+          "custo": 11
+        }
+      ]
+    },
+    {
+      "id": "4.4.4.4",
+      "links": [
+        {
+          "destino_id": "3.3.3.3",
+          "custo": 15
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 5
+        }
+      ]
+    },
+    {
+      "id": "5.5.5.5",
+      "links": [
+        {
+          "destino_id": "1.1.1.1",
+          "custo": 8
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 4
+        },
+        {
+          "destino_id": "9.9.9.9",
+          "custo": 5
+        }
+      ]
+    },
+    {
+      "id": "6.6.6.6",
+      "links": [
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 20
+        },
+        {
+          "destino_id": "2.2.2.2",
+          "custo": 6
+        },
+        {
+          "destino_id": "5.5.5.5",
+          "custo": 15
+        },
+        {
+          "destino_id": "7.7.7.7",
+          "custo": 14
+        }
+      ]
+    },
+    {
+      "id": "7.7.7.7",
+      "links": [
+        {
+          "destino_id": "11.11.11.11",
+          "custo": 11
+        },
+        {
+          "destino_id": "3.3.3.3",
+          "custo": 14
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 5
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 10
+        }
+      ]
+    },
+    {
+      "id": "8.8.8.8",
+      "links": [
+        {
+          "destino_id": "12.12.12.12",
+          "custo": 6
+        },
+        {
+          "destino_id": "4.4.4.4",
+          "custo": 4
+        },
+        {
+          "destino_id": "7.7.7.7",
+          "custo": 15
+        }
+      ]
+    },
+    {
+      "id": "9.9.9.9",
+      "links": [
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 11
+        },
+        {
+          "destino_id": "13.13.13.13",
+          "custo": 2
+        },
+        {
+          "destino_id": "5.5.5.5",
+          "custo": 5
+        }
+      ]
+    },
+    {
+      "id": "10.10.10.10",
+      "links": [
+        {
+          "destino_id": "11.11.11.11",
+          "custo": 8
+        },
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 15
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 7
+        },
+        {
+          "destino_id": "9.9.9.9",
+          "custo": 8
+        }
+      ]
+    },
+    {
+      "id": "11.11.11.11",
+      "links": [
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 6
+        },
+        {
+          "destino_id": "12.12.12.12",
+          "custo": 1
+        },
+        {
+          "destino_id": "15.15.15.15",
+          "custo": 8
+        },
+        {
+          "destino_id": "7.7.7.7",
+          "custo": 17
+        }
+      ]
+    },
+    {
+      "id": "12.12.12.12",
+      "links": [
+        {
+          "destino_id": "11.11.11.11",
+          "custo": 15
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 17
+        }
+      ]
+    },
+    {
+      "id": "13.13.13.13",
+      "links": [
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 1
+        },
+        {
+          "destino_id": "9.9.9.9",
+          "custo": 16
+        }
+      ]
+    },
+    {
+      "id": "14.14.14.14",
+      "links": [
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 13
+        },
+        {
+          "destino_id": "13.13.13.13",
+          "custo": 17
+        },
+        {
+          "destino_id": "15.15.15.15",
+          "custo": 13
+        }
+      ]
+    },
+    {
+      "id": "15.15.15.15",
+      "links": [
+        {
+          "destino_id": "11.11.11.11",
+          "custo": 16
+        },
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 17
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,409 @@
+{
+  "routers": [
+    {
+      "id": "1.1.1.1",
+      "links": [
+        {
+          "destino_id": "3.3.3.3",
+          "custo": 15
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 10
+        }
+      ]
+    },
+    {
+      "id": "2.2.2.2",
+      "links": [
+        {
+          "destino_id": "23.23.23.23",
+          "custo": 20
+        }
+      ]
+    },
+    {
+      "id": "3.3.3.3",
+      "links": [
+        {
+          "destino_id": "1.1.1.1",
+          "custo": 3
+        },
+        {
+          "destino_id": "19.19.19.19",
+          "custo": 4
+        }
+      ]
+    },
+    {
+      "id": "4.4.4.4",
+      "links": [
+        {
+          "destino_id": "21.21.21.21",
+          "custo": 17
+        },
+        {
+          "destino_id": "23.23.23.23",
+          "custo": 14
+        }
+      ]
+    },
+    {
+      "id": "5.5.5.5",
+      "links": [
+        {
+          "destino_id": "18.18.18.18",
+          "custo": 6
+        }
+      ]
+    },
+    {
+      "id": "6.6.6.6",
+      "links": [
+        {
+          "destino_id": "1.1.1.1",
+          "custo": 11
+        },
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 5
+        },
+        {
+          "destino_id": "13.13.13.13",
+          "custo": 16
+        },
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 14
+        },
+        {
+          "destino_id": "23.23.23.23",
+          "custo": 2
+        }
+      ]
+    },
+    {
+      "id": "7.7.7.7",
+      "links": [
+        {
+          "destino_id": "15.15.15.15",
+          "custo": 3
+        },
+        {
+          "destino_id": "20.20.20.20",
+          "custo": 18
+        },
+        {
+          "destino_id": "24.24.24.24",
+          "custo": 19
+        }
+      ]
+    },
+    {
+      "id": "8.8.8.8",
+      "links": [
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 11
+        },
+        {
+          "destino_id": "16.16.16.16",
+          "custo": 11
+        },
+        {
+          "destino_id": "18.18.18.18",
+          "custo": 12
+        },
+        {
+          "destino_id": "20.20.20.20",
+          "custo": 20
+        },
+        {
+          "destino_id": "25.25.25.25",
+          "custo": 16
+        }
+      ]
+    },
+    {
+      "id": "9.9.9.9",
+      "links": [
+        {
+          "destino_id": "20.20.20.20",
+          "custo": 19
+        }
+      ]
+    },
+    {
+      "id": "10.10.10.10",
+      "links": [
+        {
+          "destino_id": "17.17.17.17",
+          "custo": 15
+        },
+        {
+          "destino_id": "19.19.19.19",
+          "custo": 3
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 3
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 9
+        }
+      ]
+    },
+    {
+      "id": "11.11.11.11",
+      "links": [
+        {
+          "destino_id": "16.16.16.16",
+          "custo": 16
+        },
+        {
+          "destino_id": "20.20.20.20",
+          "custo": 3
+        },
+        {
+          "destino_id": "25.25.25.25",
+          "custo": 2
+        }
+      ]
+    },
+    {
+      "id": "12.12.12.12",
+      "links": [
+        {
+          "destino_id": "15.15.15.15",
+          "custo": 10
+        },
+        {
+          "destino_id": "17.17.17.17",
+          "custo": 19
+        }
+      ]
+    },
+    {
+      "id": "13.13.13.13",
+      "links": [
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 15
+        }
+      ]
+    },
+    {
+      "id": "14.14.14.14",
+      "links": [
+        {
+          "destino_id": "17.17.17.17",
+          "custo": 10
+        },
+        {
+          "destino_id": "18.18.18.18",
+          "custo": 13
+        },
+        {
+          "destino_id": "20.20.20.20",
+          "custo": 12
+        },
+        {
+          "destino_id": "25.25.25.25",
+          "custo": 1
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 15
+        }
+      ]
+    },
+    {
+      "id": "15.15.15.15",
+      "links": [
+        {
+          "destino_id": "12.12.12.12",
+          "custo": 12
+        },
+        {
+          "destino_id": "19.19.19.19",
+          "custo": 6
+        },
+        {
+          "destino_id": "7.7.7.7",
+          "custo": 20
+        }
+      ]
+    },
+    {
+      "id": "16.16.16.16",
+      "links": [
+        {
+          "destino_id": "11.11.11.11",
+          "custo": 4
+        },
+        {
+          "destino_id": "22.22.22.22",
+          "custo": 16
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 2
+        }
+      ]
+    },
+    {
+      "id": "17.17.17.17",
+      "links": [
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 7
+        },
+        {
+          "destino_id": "12.12.12.12",
+          "custo": 10
+        },
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 5
+        }
+      ]
+    },
+    {
+      "id": "18.18.18.18",
+      "links": [
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 8
+        },
+        {
+          "destino_id": "5.5.5.5",
+          "custo": 13
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 13
+        }
+      ]
+    },
+    {
+      "id": "19.19.19.19",
+      "links": [
+        {
+          "destino_id": "10.10.10.10",
+          "custo": 16
+        },
+        {
+          "destino_id": "15.15.15.15",
+          "custo": 3
+        },
+        {
+          "destino_id": "3.3.3.3",
+          "custo": 6
+        }
+      ]
+    },
+    {
+      "id": "20.20.20.20",
+      "links": [
+        {
+          "destino_id": "11.11.11.11",
+          "custo": 15
+        },
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 13
+        },
+        {
+          "destino_id": "7.7.7.7",
+          "custo": 18
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 9
+        },
+        {
+          "destino_id": "9.9.9.9",
+          "custo": 5
+        }
+      ]
+    },
+    {
+      "id": "21.21.21.21",
+      "links": [
+        {
+          "destino_id": "4.4.4.4",
+          "custo": 14
+        }
+      ]
+    },
+    {
+      "id": "22.22.22.22",
+      "links": [
+        {
+          "destino_id": "16.16.16.16",
+          "custo": 18
+        },
+        {
+          "destino_id": "24.24.24.24",
+          "custo": 9
+        }
+      ]
+    },
+    {
+      "id": "23.23.23.23",
+      "links": [
+        {
+          "destino_id": "2.2.2.2",
+          "custo": 14
+        },
+        {
+          "destino_id": "24.24.24.24",
+          "custo": 12
+        },
+        {
+          "destino_id": "4.4.4.4",
+          "custo": 13
+        },
+        {
+          "destino_id": "6.6.6.6",
+          "custo": 8
+        }
+      ]
+    },
+    {
+      "id": "24.24.24.24",
+      "links": [
+        {
+          "destino_id": "22.22.22.22",
+          "custo": 5
+        },
+        {
+          "destino_id": "23.23.23.23",
+          "custo": 3
+        },
+        {
+          "destino_id": "7.7.7.7",
+          "custo": 6
+        }
+      ]
+    },
+    {
+      "id": "25.25.25.25",
+      "links": [
+        {
+          "destino_id": "11.11.11.11",
+          "custo": 5
+        },
+        {
+          "destino_id": "14.14.14.14",
+          "custo": 8
+        },
+        {
+          "destino_id": "8.8.8.8",
+          "custo": 8
+        }
+      ]
+    }
+  ]
+}

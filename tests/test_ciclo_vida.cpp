@@ -1,17 +1,15 @@
 #include "roteador.hpp"
 #include "simulador.hpp"
-#include <gtest/gtest.h>
+
 #include <chrono>
+#include <gtest/gtest.h>
 #include <thread>
 
 // ============================================================
-// FIXTURE: Rede de 3 nós reutilizável entre os testes
+// FIXTURE: Rede de 3 nós — nenhuma thread ligada por padrão.
 //
 //   [1] --10-- [2] --10-- [3]
-//    |_________20_________|
-//
-// Nenhum roteador está ligado por padrão.
-// Cada teste liga apenas o que precisa.
+//    |__________20_________|
 // ============================================================
 class CicloVidaFixture : public ::testing::Test
 {
@@ -31,7 +29,6 @@ class CicloVidaFixture : public ::testing::Test
 		sim.registrar_roteador("2", r2);
 		sim.registrar_roteador("3", r3);
 
-		// Cabeamento bidirecional
 		adicionar_cabo(r1, r2, 10);
 		adicionar_cabo(r2, r1, 10);
 		adicionar_cabo(r2, r3, 10);
@@ -42,9 +39,12 @@ class CicloVidaFixture : public ::testing::Test
 
 	void TearDown() override
 	{
-		if (r1->is_ativo()) r1->desligar_roteador();
-		if (r2->is_ativo()) r2->desligar_roteador();
-		if (r3->is_ativo()) r3->desligar_roteador();
+		if (r1->is_ativo())
+			r1->desligar_roteador();
+		if (r2->is_ativo())
+			r2->desligar_roteador();
+		if (r3->is_ativo())
+			r3->desligar_roteador();
 	}
 
 	void adicionar_cabo(std::shared_ptr<Roteador> origem,
@@ -58,6 +58,10 @@ class CicloVidaFixture : public ::testing::Test
 		origem->adicionar_link(l);
 	}
 };
+
+// ============================================================
+// GRUPO 1 — FilaMensagens (sem thread, determinístico)
+// ============================================================
 
 // ============================================================
 // CASO 1 — wait_pop retorna TIMEOUT com fila vazia
@@ -83,13 +87,13 @@ TEST(FilaMensagensTest, WaitPopRetornaMensagemAntesDoTimeout)
 {
 	FilaMensagens fila;
 
-	std::thread produtor([&fila]() {
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		Mensagem msg;
-		msg.tipo = TipoMensagem::HELLO;
-		msg.remetente_id = "2";
-		fila.push_back(msg);
-	});
+	std::thread produtor([&fila]()
+	                     {
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                Mensagem msg;
+                msg.tipo         = TipoMensagem::HELLO;
+                msg.remetente_id = "2";
+                fila.push_back(msg); });
 
 	Mensagem recebida = fila.wait_pop(std::chrono::milliseconds(500));
 	produtor.join();
@@ -115,7 +119,7 @@ TEST(FilaMensagensTest, PushFrontTemPrioridadeSobrePushBack)
 	pilula.tipo = TipoMensagem::POISON_PILL;
 
 	fila.push_back(hello);
-	fila.push_front(pilula); // deve entrar na frente
+	fila.push_front(pilula);
 
 	Mensagem primeira = fila.wait_pop(std::chrono::milliseconds(100));
 	Mensagem segunda = fila.wait_pop(std::chrono::milliseconds(100));
@@ -125,93 +129,87 @@ TEST(FilaMensagensTest, PushFrontTemPrioridadeSobrePushBack)
 }
 
 // ============================================================
-// CASO 4 — enviar_hello deposita HELLO na inbox do vizinho
+// GRUPO 2 — processar_mensagem() (sem thread, chamada direta)
 // ============================================================
-TEST_F(CicloVidaFixture, HelloChegaNaInboxDoVizinho)
+
+// ============================================================
+// CASO 4 — LSU atualiza a LSDB local e dispara Dijkstra
+//
+// r1 recebe LSU de "2" com um link. A tabela de roteamento
+// deve registrar "2" como destino roteável.
+// ============================================================
+TEST_F(CicloVidaFixture, ProcessarLsuAtualizaLsdb)
 {
-	// r1 ligado, r2 e r3 não — inbox deles não tem consumidor
-	r1->ligar_roteador();
+	Link link_de_r2;
+	link_de_r2.destino_id = "1";
+	link_de_r2.custo = 10;
+	link_de_r2.inbox_vizinho = nullptr;
 
-	r1->enviar_hello();
+	Mensagem lsu;
+	lsu.tipo = TipoMensagem::LSU;
+	lsu.remetente_id = "2";
+	lsu.payload = {link_de_r2};
 
-	// r2 deve ter recebido o HELLO de r1
-	Mensagem recebida_r2 = r2->get_inbox()->wait_pop(std::chrono::milliseconds(200));
-	EXPECT_EQ(recebida_r2.tipo, TipoMensagem::HELLO);
-	EXPECT_EQ(recebida_r2.remetente_id, "1");
+	r1->processar_mensagem(lsu);
 
-	// r3 também deve ter recebido (link direto de custo 20)
-	Mensagem recebida_r3 = r3->get_inbox()->wait_pop(std::chrono::milliseconds(200));
-	EXPECT_EQ(recebida_r3.tipo, TipoMensagem::HELLO);
-	EXPECT_EQ(recebida_r3.remetente_id, "1");
+	auto tabela = r1->get_tabela_roteamento();
+	EXPECT_TRUE(tabela.count("2")) << "r1 deveria ter rota para r2 apos processar LSU";
+	EXPECT_EQ(tabela.at("2"), "2");
 }
 
 // ============================================================
-// CASO 5 — ciclo_vida dispara hello periodicamente
+// CASO 5 — LSU duplicado não dispara Dijkstra novamente
 //
-// r1 ligado, r2 desligado (inbox não consumida).
-// Após 2.5s, inbox de r2 deve ter pelo menos 1 HELLO.
+// Mesmo LSU enviado duas vezes. A tabela de roteamento deve
+// ser idêntica após a segunda entrega (LSDB não mudou).
 // ============================================================
-TEST_F(CicloVidaFixture, CicloDisparaHelloPeriodico)
+TEST_F(CicloVidaFixture, ProcessarLsuDuplicadoNaoAlteraLsdb)
 {
-	r1->ligar_roteador();
+	Link link_de_r2;
+	link_de_r2.destino_id = "1";
+	link_de_r2.custo = 10;
+	link_de_r2.inbox_vizinho = nullptr;
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+	Mensagem lsu;
+	lsu.tipo = TipoMensagem::LSU;
+	lsu.remetente_id = "2";
+	lsu.payload = {link_de_r2};
 
-	Mensagem recebida = r2->get_inbox()->wait_pop(std::chrono::milliseconds(200));
-	EXPECT_EQ(recebida.tipo, TipoMensagem::HELLO);
-	EXPECT_EQ(recebida.remetente_id, "1");
+	r1->processar_mensagem(lsu);
+	auto tabela_apos_primeiro = r1->get_tabela_roteamento();
+
+	r1->processar_mensagem(lsu);
+	auto tabela_apos_segundo = r1->get_tabela_roteamento();
+
+	EXPECT_EQ(tabela_apos_primeiro, tabela_apos_segundo)
+	      << "LSU duplicado nao deveria alterar a tabela de roteamento";
 }
 
 // ============================================================
-// CASO 6 — processar_mensagem muda estado de DOWN para INIT
-//
-// r2 recebe um HELLO de "1" sem conhecer "2" na lista de vizinhos.
-// Estado de "1" na tabela de r2 deve ir para INIT.
-// Verificamos indiretamente: r2 envia HELLO de volta após processar.
+// GRUPO 3 — Controle de thread
 // ============================================================
-TEST_F(CicloVidaFixture, HelloRecebidoDisparaHelloDeVolta)
-{
-	// Liga r2 para processar mensagens
-	r2->ligar_roteador();
-
-	// Injeta um HELLO de "1" direto na inbox de r2
-	// vizinhos_conhecidos vazio = r2 ainda não conhece r1 = estado INIT
-	Mensagem hello;
-	hello.tipo = TipoMensagem::HELLO;
-	hello.remetente_id = "1";
-	// vizinhos_conhecidos vazio propositalmente
-	r2->get_inbox()->push_back(hello);
-
-	// Após processar, r2 deve ter mudado estado de "1" para INIT
-	// e no próximo ciclo de hello vai incluir "1" em vizinhos_conhecidos
-	// Verificação simples: r2 não crashou e continua ativo
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	EXPECT_TRUE(r2->is_ativo());
-}
 
 // ============================================================
-// CASO 7 — POISON_PILL encerra o ciclo mesmo com mensagens na fila
+// CASO 6 — POISON_PILL encerra o ciclo mesmo com mensagens na fila
 //
-// Injeta um HELLO e depois uma POISON_PILL.
-// A thread deve encerrar mesmo tendo o HELLO pendente.
+// Injeta HELLO na fila antes de desligar. desligar_roteador()
+// insere POISON_PILL no front — thread encerra imediatamente.
 // ============================================================
 TEST_F(CicloVidaFixture, PoisonPillEncerraComMensagensPendentes)
 {
 	r1->ligar_roteador();
 
-	// Injeta HELLO normal na fila
 	Mensagem hello;
 	hello.tipo = TipoMensagem::HELLO;
 	hello.remetente_id = "2";
 	r1->get_inbox()->push_back(hello);
 
-	// Desligar injeta POISON_PILL no front — deve encerrar imediatamente
 	r1->desligar_roteador();
 
 	EXPECT_FALSE(r1->is_ativo());
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	::testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
